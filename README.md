@@ -2,11 +2,15 @@
 
 Our code is coming soon.
 
-## 1.Overview
+## 1. Overview
 
 ![overview](fig/overview.png)
 
-## 2.PointDG-3to1 benchmark
+## 2. Performance
+
+![performance](fig/performance.png)
+
+## 3. PointDG-3to1 benchmark
 
 We propose a multi-domain generalization benchmark named PointDG-3to1 consisting of four sub-datasets. 
 
@@ -17,10 +21,6 @@ We propose a multi-domain generalization benchmark named PointDG-3to1 consisting
 ### Visualization
 
 ![Visualization](fig/Visualization.png)
-
-## 3.Performance
-
-![performance](fig/performance.png)
 
 ## Cite
 
