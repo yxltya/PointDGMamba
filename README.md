@@ -6,7 +6,7 @@ Our code is coming soon.
 
 ![overview](fig/overview.png)
 
-## 2. PointDG-3to1 benchmark
+## 2.PointDG-3to1 benchmark
 
 We propose a multi-domain generalization benchmark named PointDG-3to1 consisting of four sub-datasets. 
 
