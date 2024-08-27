@@ -29,7 +29,7 @@ If you use PointDGMamba in your research, please use the following BibTeX entry.
 ```
 @article{yang2024pointdgmamba,
       title={PointDGMamba: Domain Generalization of Point Cloud Classification via Generalized State Space Model}, 
-      author={Yang, Hao and Zhou, Qianyu and Sun,Haijia and Li,Xiangtai and Liu, Fengqi and Lu, Xuequan and Ma, Lizhuang and Yan, Shuicheng},
+      author={Yang, Hao and Zhou, Qianyu and Sun, Haijia and Li, Xiangtai and Liu, Fengqi and Lu, Xuequan and Ma, Lizhuang and Yan, Shuicheng},
       journal={arXiv preprint arXiv:2408.13574},
       year={2024}
 }
