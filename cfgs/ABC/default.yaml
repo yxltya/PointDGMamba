@@ -1,0 +1,70 @@
+# ---------------------------------------------------------------------------- #
+# Dataset cfgs
+# ---------------------------------------------------------------------------- #
+dataset:
+  common:
+    NAME: ABC
+    data_dir: ['./data/PDG3to1/PDG3to1/A','./data/PDG3to1/PDG3to1/B','./data/PDG3to1/PDG3to1/C']
+  train:
+    split: train
+  val:
+    split: val
+    num_points: 1024 
+
+
+num_points: 1024  # the number of points passed into model
+num_classes: &nclass
+  5
+
+datatransforms:
+  train: [PointsToTensor, PointCloudScaling, PointCloudCenterAndNormalize, PointCloudJitter]
+  vote: [PointCloudRotation]
+  val: [PointsToTensor, PointCloudCenterAndNormalize]
+  # train: [PointsToTensor, PointCloudScaling, PointCloudCenterAndNormalize, PointCloudRotation]
+  # vote: [PointCloudRotation]
+  # val: [PointsToTensor, PointCloudCenterAndNormalize]
+  kwargs:
+    scale: [0.9, 1.1]
+    # angle: [0.0, 1.0, 0.0]
+    gravity_dim: 1
+
+batch_size: 30
+val_batch_size: 32 
+dataloader:
+  num_workers: 6
+
+# ---------------------------------------------------------------------------- #
+# Training cfgs
+# ---------------------------------------------------------------------------- #
+# scheduler
+criterion_args:
+  NAME: SmoothCrossEntropy
+  # NAME: SmoothCrossEntropy_ClassBalance
+  label_smoothing: 0.3
+
+# Optimizer
+lr: 0.002
+optimizer:
+ NAME: 'adamw'
+ weight_decay: 0.05
+
+sched: cosine
+epochs: 250
+warmup_epochs: 0
+min_lr: 1.0e-4
+t_max: 200
+
+grad_norm_clip: 10
+
+# ---------------------------------------------------------------------------- #
+# io and misc
+# ---------------------------------------------------------------------------- #
+log_dir: 'ABC'
+print_freq: 10
+val_freq: 1
+# ----------------- Model related
+pretrained_path: null 
+
+wandb:
+  # project: PointNeXt-ScanObjectNN
+  project: PCM-ABCtoD
