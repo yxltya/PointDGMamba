@@ -210,25 +210,9 @@ class Mamba(nn.Module):
         if self.in_proj.bias is not None:
             xz = xz + rearrange(self.in_proj.bias.to(dtype=xz.dtype), "d -> d 1")
 
-        # pdb.set_trace()
         A = -torch.exp(self.A_log.float())  # (d_inner, d_state)
-        # In the backward pass we write dx and dz next to each other to avoid torch.cat
         if self.use_fast_path and inference_params is None:  # Doesn't support outputting the states
             if self.bimamba_type == "v2" and self.DDS == False:
-                # out = mamba_inner_fn_no_out_proj(
-                #     xz,
-                #     self.conv1d.weight,
-                #     self.conv1d.bias,
-                #     self.x_proj.weight,
-                #     self.dt_proj.weight,
-                #     A,
-                #     None,  # input-dependent B
-                #     None,  # input-dependent C
-                #     self.D.float(),
-                #     delta_bias=self.dt_proj.bias.float(),
-                #     delta_softplus=True,
-                # )
-                # pdb.set_trace()
                 A_b = -torch.exp(self.A_b_log.float())
                 out_b = mamba_inner_fn_no_out_proj(
                     xz.flip([-1]),
@@ -243,14 +227,12 @@ class Mamba(nn.Module):
                     delta_bias=self.dt_proj_b.bias.float(),
                     delta_softplus=True,
                 )
-                # pdb.set_trace()
-                # shuffle扫描
                 A_s = -torch.exp(self.A_s_log.float())
-                # pdb.set_trace()
+               
                 shuffle = torch.randperm(xz.shape[-1])
                 xz_shuffle = xz[:, :, shuffle]
 
-                # 使用 argsort 找到逆操作
+                
                 shuffle_inverse = torch.argsort(shuffle)
 
                 out_shuffle = mamba_inner_fn_no_out_proj(
@@ -267,37 +249,9 @@ class Mamba(nn.Module):
                     delta_softplus=True,
                 )
                 out_shuffle = out_shuffle[:, :, shuffle_inverse]
-                # F.linear(rearrange(out_z, "b d l -> b l d"), out_proj_weight, out_proj_bias)
-
-
-
-                # 只用forward
-                # out = F.linear(rearrange(out, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-                # 只用backward
-                # out = F.linear(rearrange(out_b.flip([-1]), "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-                
-                # pdb.set_trace()
-                # out = F.linear(rearrange(out + out_b.flip([-1]), "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-                
-                # shuffle
+               
                 out = F.linear(rearrange(out_b.flip([-1]) + out_shuffle, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
 
-
-                # # 二者加权
-                # # pdb.set_trace()
-                # weights = torch.sigmoid(self.weights)  # 通过 sigmoid 函数将权重限制在 (0, 1) 范围内
-                # weighted_out = weights[0] * out + weights[1] * out_b.flip([-1])
-                # out = F.linear(rearrange(weighted_out, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-                # print("---------------"+str(weights)+"-------------")
-
-                # 随机选择
-                # rand_num = torch.rand(1).item()
-                # if rand_num > 0.5:
-                #     weighted_out = out
-                # else:
-                #     weighted_out = out_b
-
-                # out = F.linear(rearrange(weighted_out, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
             elif self.bimamba_type == "v2" and self.DDS == True:
                 # forward 
                 out = mamba_inner_fn_no_out_proj(
@@ -314,50 +268,6 @@ class Mamba(nn.Module):
                     delta_softplus=True,
                 )
                 out = F.linear(rearrange(out, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-
-                
-                # # backward
-                # A_b = -torch.exp(self.A_b_log.float())
-                # out_b = mamba_inner_fn_no_out_proj(
-                #     xz.flip([-1]),
-                #     self.conv1d_b.weight,
-                #     self.conv1d_b.bias,
-                #     self.x_proj_b.weight,
-                #     self.dt_proj_b.weight,
-                #     A_b,
-                #     None,
-                #     None,
-                #     self.D_b.float(),
-                #     delta_bias=self.dt_proj_b.bias.float(),
-                #     delta_softplus=True,
-                # )
-                # out = F.linear(rearrange(out_b.flip([-1]), "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-
-
-
-                # # shuffle扫描
-                # A_s = -torch.exp(self.A_s_log.float())
-                # shuffle = torch.randperm(xz.shape[-1])
-                # xz_shuffle = xz[:, :, shuffle]
-                # shuffle_inverse = torch.argsort(shuffle) # 使用 argsort 找到逆操作
-                # out_shuffle = mamba_inner_fn_no_out_proj(
-                #     xz_shuffle,
-                #     self.conv1d_s.weight,
-                #     self.conv1d_s.bias,
-                #     self.x_proj_s.weight,
-                #     self.dt_proj_s.weight,
-                #     A_s,
-                #     None,
-                #     None,
-                #     self.D_s.float(),
-                #     delta_bias=self.dt_proj_s.bias.float(),
-                #     delta_softplus=True,
-                # )
-                # out_shuffle = out_shuffle[:, :, shuffle_inverse]
-                # out = F.linear(rearrange(out_shuffle, "b d l -> b l d"), self.out_proj.weight, self.out_proj.bias)
-
-
-
 
 
             else:
@@ -392,9 +302,6 @@ class Mamba(nn.Module):
                     self.activation,
                 )
 
-            # We're careful here about the layout, to avoid extra transposes.
-            # We want dt to have d as the slowest moving dimension
-            # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.
             x_dbl = self.x_proj(rearrange(x, "b d l -> (b l) d"))  # (bl d)
             dt, B, C = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=-1)
             dt = self.dt_proj.weight @ dt.t()
