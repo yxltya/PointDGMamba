@@ -229,6 +229,7 @@ class ScanNetAndModelNet(Dataset):
                      f'size: {self.points_2.shape}, num_classes: {self.labels_2.max()+1}')
         
         if slit_name == 'test':
+            self.points_1 = self.points_1[:, :, :3]
             self.points_1 = np.concatenate([self.points_1, self.points_2], axis=0)
             self.labels_1 = np.concatenate([self.labels_1, self.labels_2], axis=0)
             self.points_2 = self.points_1
